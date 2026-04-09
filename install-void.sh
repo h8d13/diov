@@ -35,7 +35,7 @@ mkdir -p /mnt/boot/efi
 mount "${DISK}1" /mnt/boot/efi
 
 # Install base system
-XBPS_ARCH=x86_64 xbps-install -Sy -R "$REPO" -r /mnt base-system linux grub-x86_64-efi
+XBPS_ARCH=x86_64 xbps-install -SyU -R "$REPO" -r /mnt base-system linux grub-x86_64-efi
 
 # Configure system
 echo "void" > /mnt/etc/hostname
