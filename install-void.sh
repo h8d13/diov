@@ -18,14 +18,15 @@ DISK="$1"
 echo "Fetching mirror list..."
 YAML=$(curl -s "https://raw.githubusercontent.com/void-linux/xmirror/master/mirrors.yaml")
 mapfile -t MIRRORS < <(echo "$YAML" | grep -oP 'https?://[^"]+' | sed 's:/$::')
-echo "Testing ${#MIRRORS[@]} mirrors..."
 tmp=$(mktemp)
+echo "Testing ${#MIRRORS[@]} mirrors..."
 for m in "${MIRRORS[@]}"; do
-  { t=$(curl -o /dev/null -s -w '%{time_connect}' --connect-timeout 2 "$m/current" 2>/dev/null || echo 999); echo "$t $m"; } >> "$tmp" &
+  ( t=$(curl -o /dev/null -s -w '%{time_connect}' --connect-timeout 1 "$m/current" 2>/dev/null || echo 999); echo "$t $m" >> "$tmp" ) &
 done
 wait
 fastest=$(sort -n "$tmp" | head -1 | cut -d' ' -f2)
 rm "$tmp"
+echo "Fastest: $fastest"
 REPO="${fastest:-https://repo-default.voidlinux.org}/current"
 echo "Using mirror: $REPO"
 
