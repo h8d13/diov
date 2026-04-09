@@ -49,9 +49,9 @@ EOF
 sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /mnt/etc/default/libc-locales
 
 # Configure chroot: locales, password, grub, initramfs
+echo 'root:void' | chpasswd -R /mnt
 xchroot /mnt /bin/bash <<'CHROOT'
 xbps-reconfigure -f glibc-locales
-passwd
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void"
 xbps-reconfigure -fa
 CHROOT
