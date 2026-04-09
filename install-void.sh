@@ -5,7 +5,7 @@
 # 
 # deps=(
 # 	curl
-# )
+#   parted)
 
 set -e
 
@@ -46,9 +46,9 @@ ${DISK}1 /boot/efi vfat defaults 0 2
 EOF
 
 # Install bootloader and set root password
-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void
-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
-echo "root:void" | chroot /mnt chpasswd
+xchroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void
+xchroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
+echo "root:void" | xchroot /mnt chpasswd
 
 umount -R /mnt
 echo "Installation complete. Root password is 'void'"
