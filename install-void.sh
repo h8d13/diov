@@ -8,24 +8,16 @@ set -e
 
 DISK="$1"
 
-# Find fastest mirror
-MIRRORS=(
-  "https://repo-fi.voidlinux.org" "https://repo-de.voidlinux.org" "https://repo-us.voidlinux.org"
-  "https://repo-fastly.voidlinux.org" "https://mirrors.summithq.com/voidlinux" "https://mirrors.cicku.me/voidlinux"
-  "https://mirror.ps.kz/voidlinux" "https://mirror.nju.edu.cn/voidlinux" "https://mirrors.bfsu.edu.cn/voidlinux"
-  "https://mirrors.tuna.tsinghua.edu.cn/voidlinux" "https://mirror.sjtu.edu.cn/voidlinux"
-  "https://mirrors.dotsrc.org/voidlinux" "https://ftp.cc.uoc.gr/mirrors/linux/voidlinux"
-  "https://voidlinux.mirror.garr.it" "https://void.cijber.net" "https://void.sakamoto.pl"
-  "https://mirror.yandex.ru/mirrors/voidlinux" "https://ftp.lysator.liu.se/pub/voidlinux"
-  "https://mirror.accum.se/mirror/voidlinux" "https://mirror.puzzle.ch/voidlinux"
-  "https://mirror.clarkson.edu/voidlinux" "https://mirrors.lug.mtu.edu/voidlinux"
-  "https://mirror.aarnet.edu.au/pub/voidlinux" "https://ftp.swin.edu.au/voidlinux"
-)
-echo "Testing mirrors..."
-fastest=""; best=999
+# Fetch and test mirrors
+echo "Fetching mirror list..."
+YAML=$(curl -s "https://raw.githubusercontent.com/void-linux/xmirror/master/mirrors.yaml")
+mapfile -t MIRRORS < <(echo "$YAML" | grep -oP 'https?://[^"]+' | sed 's:/$::')
+echo "Testing ${#MIRRORS[@]} mirrors..."
+fastest=""; best=999999
 for m in "${MIRRORS[@]}"; do
-  t=$(curl -o /dev/null -s -w '%{time_total}' --connect-timeout 2 "$m/current" 2>/dev/null || echo 999)
-  (( $(echo "$t < $best" | bc -l) )) && { best=$t; fastest=$m; }
+  t=$(curl -o /dev/null -s -w '%{time_connect}' --connect-timeout 2 "$m/current" 2>/dev/null || echo 999)
+  ms=${t//./}; ms=${ms#0}
+  (( ms < best )) && { best=$ms; fastest=$m; }
 done
 REPO="${fastest:-https://repo-default.voidlinux.org}/current"
 echo "Using mirror: $REPO"
