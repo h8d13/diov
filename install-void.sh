@@ -19,9 +19,9 @@ echo "Fetching mirror list..."
 YAML=$(curl -s "https://raw.githubusercontent.com/void-linux/xmirror/master/mirrors.yaml")
 mapfile -t MIRRORS < <(echo "$YAML" | grep -oP 'https?://[^"]+' | sed 's:/$::')
 echo "Testing ${#MIRRORS[@]} mirrors..."
-test_mirror() { echo "$(curl -o /dev/null -s -w '%{time_connect}' --max-time 1 "$1/current" 2>/dev/null || echo 999) $1"; }
+test_mirror() { curl -o /dev/null -sf -w '%{time_connect}' --max-time 2 "$1/current" && echo " $1"; }
 export -f test_mirror
-fastest=$(printf '%s\n' "${MIRRORS[@]}" | xargs -P0 -I{} bash -c 'test_mirror "$@"' _ {} | sort -n | head -1 | cut -d' ' -f2)
+fastest=$(printf '%s\n' "${MIRRORS[@]}" | xargs -P0 -I{} bash -c 'test_mirror "$@"' _ {} 2>/dev/null | sort -n | head -1 | cut -d' ' -f2)
 echo "Fastest: $fastest"
 REPO="${fastest:-https://repo-default.voidlinux.org}/current"
 echo "Using mirror: $REPO"
