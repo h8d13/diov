@@ -1,6 +1,12 @@
 #!/bin/bash
 # Void Linux installer script - requires root and target disk as argument
 
+# command -v 
+# 
+# deps=(
+# 	curl
+# )
+
 set -e
 
 [[ $EUID -ne 0 ]] && { echo "Run as root"; exit 1; }
