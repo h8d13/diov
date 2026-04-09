@@ -34,8 +34,10 @@ mount "${DISK}2" /mnt
 mkdir -p /mnt/boot/efi
 mount "${DISK}1" /mnt/boot/efi
 
-# Install base system
-XBPS_ARCH=x86_64 xbps-install -SyU -R "$REPO" -r /mnt base-system linux grub-x86_64-efi
+# Copy RSA keys and install base system
+mkdir -p /mnt/var/db/xbps/keys
+cp /var/db/xbps/keys/* /mnt/var/db/xbps/keys/
+XBPS_ARCH=x86_64 xbps-install -Sy -R "$REPO" -r /mnt base-system linux-mainline grub-x86_64-efi
 
 # Configure system
 echo "void" > /mnt/etc/hostname
@@ -45,8 +47,12 @@ ${DISK}2 / ext4 defaults 0 1
 ${DISK}1 /boot/efi vfat defaults 0 2
 EOF
 
-# Install bootloader and set root password
-xchroot /mnt /bin/bash -c 'grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=void && grub-mkconfig -o /boot/grub/grub.cfg && echo "root:void" | chpasswd'
+# Configure chroot: set password, install grub, generate initramfs
+xchroot /mnt /bin/bash <<'CHROOT'
+passwd
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void"
+xbps-reconfigure -fa
+CHROOT
 
 umount -R /mnt
-echo "Installation complete. Root password is 'void'"
+echo "Installation complete."
