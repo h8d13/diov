@@ -48,13 +48,21 @@ EOF
 # Enable en_US.UTF-8 locale
 sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /mnt/etc/default/libc-locales
 
-# Configure chroot: locales, password, grub, initramfs
+# Set root password
 echo 'root:void' | chpasswd -R /mnt
-xchroot /mnt /bin/bash <<'CHROOT'
+
+# Mount pseudo-filesystems
+mount --rbind /sys /mnt/sys && mount --make-rslave /mnt/sys
+mount --rbind /dev /mnt/dev && mount --make-rslave /mnt/dev
+mount --rbind /proc /mnt/proc && mount --make-rslave /mnt/proc
+
+# Configure chroot: locales, grub, initramfs
+chroot /mnt /bin/bash <<'CHROOT'
 xbps-reconfigure -f glibc-locales
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void"
 xbps-reconfigure -fa
 CHROOT
 
+# Cleanup
 umount -R /mnt
 echo "Installation complete."
