@@ -41,14 +41,16 @@ XBPS_ARCH=x86_64 xbps-install -Sy -R "$REPO" -r /mnt base-system linux-mainline 
 
 # Configure system
 echo "void" > /mnt/etc/hostname
-echo "LANG=en_US.UTF-8" > /mnt/etc/locale.conf
 cat > /mnt/etc/fstab <<EOF
 ${DISK}2 / ext4 defaults 0 1
 ${DISK}1 /boot/efi vfat defaults 0 2
 EOF
+# Enable en_US.UTF-8 locale
+sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /mnt/etc/default/libc-locales
 
-# Configure chroot: set password, install grub, generate initramfs
+# Configure chroot: locales, password, grub, initramfs
 xchroot /mnt /bin/bash <<'CHROOT'
+xbps-reconfigure -f glibc-locales
 passwd
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void"
 xbps-reconfigure -fa
