@@ -22,7 +22,7 @@ echo "Testing ${#MIRRORS[@]} mirrors..."
 fastest=""; best=999999
 for m in "${MIRRORS[@]}"; do
   t=$(curl -o /dev/null -s -w '%{time_connect}' --connect-timeout 2 "$m/current" 2>/dev/null || echo 999)
-  ms=${t//./}; ms=${ms#0}
+  ms=$((10#${t//./}))
   (( ms < best )) && { best=$ms; fastest=$m; }
 done
 REPO="${fastest:-https://repo-default.voidlinux.org}/current"
