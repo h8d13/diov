@@ -12,6 +12,11 @@ set -e
 [[ $EUID -ne 0 ]] && { echo "Run as root"; exit 1; }
 [[ -z "$1" ]] && { echo "Usage: $0 /dev/sdX"; exit 1; }
 
+# Ensure required tools are present
+for pkg in curl parted; do
+	command -v "$pkg" >/dev/null || xbps-install -Sy "$pkg"
+done
+
 DISK="$1"
 
 # Fetch and test mirrors
@@ -19,9 +24,9 @@ echo "Fetching mirror list..."
 YAML=$(curl -s "https://raw.githubusercontent.com/void-linux/xmirror/master/mirrors.yaml")
 mapfile -t MIRRORS < <(echo "$YAML" | grep -oP 'https?://[^"]+' | sed 's:/$::')
 echo "Testing ${#MIRRORS[@]} mirrors..."
-test_mirror() { curl -o /dev/null -sf -w '%{time_connect}' --max-time 2 "$1/current" && echo " $1"; }
+test_mirror() { speed=$(curl -o /dev/null -sf -w '%{speed_download}' --max-time 5 "$1/current/x86_64-repodata") && echo "$speed $1"; }
 export -f test_mirror
-fastest=$(printf '%s\n' "${MIRRORS[@]}" | xargs -P0 -I{} bash -c 'test_mirror "$@"' _ {} 2>/dev/null | sort -n | head -1 | cut -d' ' -f2)
+fastest=$(printf '%s\n' "${MIRRORS[@]}" | xargs -P0 -I{} bash -c 'test_mirror "$@"' _ {} 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2)
 echo "Fastest: $fastest"
 REPO="${fastest:-https://repo-default.voidlinux.org}/current"
 echo "Using mirror: $REPO"
