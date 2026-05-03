@@ -31,8 +31,8 @@ parted -s "$DISK" mklabel gpt mkpart ESP fat32 1MiB 513MiB set 1 esp on mkpart r
 mkfs.vfat -F32 "${DISK}1"
 mkfs.ext4 -F "${DISK}2"
 mount "${DISK}2" /mnt
-mkdir -p /mnt/boot/efi
-mount "${DISK}1" /mnt/boot/efi
+mkdir -p /mnt/efi
+mount "${DISK}1" /mnt/efi
 
 # Copy RSA keys and install base system
 mkdir -p /mnt/var/db/xbps/keys
@@ -43,13 +43,10 @@ XBPS_ARCH=x86_64 xbps-install -Sy -R "$REPO" -r /mnt base-system linux-mainline 
 echo "void" > /mnt/etc/hostname
 cat > /mnt/etc/fstab <<EOF
 ${DISK}2 / ext4 defaults 0 1
-${DISK}1 /boot/efi vfat defaults 0 2
+${DISK}1 /efi vfat defaults 0 2
 EOF
 # Enable en_US.UTF-8 locale
 sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /mnt/etc/default/libc-locales
-
-# Set root password
-echo 'root:void' | chpasswd -R /mnt
 
 # Mount pseudo-filesystems
 mount --rbind /sys /mnt/sys && mount --make-rslave /mnt/sys
@@ -59,10 +56,16 @@ mount --rbind /proc /mnt/proc && mount --make-rslave /mnt/proc
 # Configure chroot: locales, grub, initramfs
 chroot /mnt /bin/bash <<'CHROOT'
 xbps-reconfigure -f glibc-locales
-grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id="Void"
+grub-install --target=x86_64-efi --efi-directory=/efi --bootloader-id="Void"
 xbps-reconfigure -fa
 CHROOT
 
+echo ""
+echo "=== Base install complete ==="
+echo "Dropping you into chroot. Run 'passwd' to set root password, then 'exit'."
+echo ""
+chroot /mnt /bin/bash
+
 # Cleanup
 umount -R /mnt
-echo "Installation complete."
+echo "Installation complete. You can now reboot."
